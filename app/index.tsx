@@ -1,12 +1,95 @@
-import { Text, View } from "react-native";
+import { ReactNode, useState } from "react";
+import {
+  Button,
+  FlatList,
+  StyleSheet,
+  Text,
+  View,
+  TouchableOpacity,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-export default function Index() {
+function MyComponent() {
   return (
-    <View className="flex-1 justify-center items-center bg-gray-100">
-      <View className="w-64 h-40 bg-blue-500 rounded-lg shadow-lg border-2 border-blue-700 justify-center items-center mb-4">
-        <Text className="text-white font-bold text-lg">NativeWind Box</Text>
-        <Text className="text-blue-100 text-sm mt-2">Tailwind is working!</Text>
-      </View>
+    <View style={styles.container}>
+      <Text style={styles.text}>Sveiki!</Text>
     </View>
   );
 }
+
+const duomenys = [
+  { id: "1", pavadinimas: "Obuolys" },
+  { id: "2", pavadinimas: "Bananas" },
+  { id: "3", pavadinimas: "Apelsinas" },
+  { id: "4", pavadinimas: "Kriaušė" },
+];
+
+const ButtonsGOOD = ({ children }: { children?: ReactNode }) => {
+  return <Button title={String(children)} />;
+};
+
+export default function Index() {
+  const [vardas, setVardas] = useState("Jonas"); // DEFAULT BUS JONAS
+
+  const pakeistiVardą = () => {
+    setVardas(vardas === "Jonas" ? "Marija" : "Jonas");
+  };
+
+  return (
+    <SafeAreaView style={styles.mainContainer}>
+      <Text style={styles.title}>Vaisių sąrašas:</Text>
+
+      <FlatList
+        data={duomenys}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <View style={styles.sarasoElementas}>
+            <Text style={styles.sarasoTekstas}>{item.pavadinimas}</Text>
+          </View>
+        )}
+      />
+
+      <MyComponent />
+      <ButtonsGOOD>Click Me</ButtonsGOOD>
+
+      {/* VARDAS */}
+      <View style={styles.container}>
+        <Text style={styles.title}>Vardas: {vardas}</Text>
+        <TouchableOpacity onPress={pakeistiVardą}>
+          <Text>Keisti vardą</Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
+  );
+}
+const styles = StyleSheet.create({
+  mainContainer: {
+    flex: 1,
+    padding: 20,
+    backgroundColor: "#f5f5f5",
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: "bold",
+    marginBottom: 20,
+    textAlign: "center",
+  },
+  sarasoElementas: {
+    backgroundColor: "lightblue",
+    padding: 15,
+    marginVertical: 5,
+    borderRadius: 8,
+  },
+  sarasoTekstas: {
+    fontSize: 18,
+    color: "black",
+  },
+  container: {
+    backgroundColor: "blue",
+    padding: 20,
+  },
+  text: {
+    color: "white",
+    fontSize: 18,
+  },
+});

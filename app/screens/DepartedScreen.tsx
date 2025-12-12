@@ -43,6 +43,9 @@ export default function DepartedScreen() {
   const [showDeliveryModal, setShowDeliveryModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState<Departed | null>(null);
   const [deliveryComments, setDeliveryComments] = useState("");
+  const [filter, setFilter] = useState<"all" | "delivered" | "notDelivered">(
+    "all"
+  );
 
   useEffect(() => {
     const unsubDeparted = onSnapshot(
@@ -93,6 +96,25 @@ export default function DepartedScreen() {
     return departed.reduce((sum, item) => sum + item.quantity, 0);
   };
 
+  const getDeliveredCount = () => {
+    return departed.filter((item) => isDelivered(item.id)).length;
+  };
+
+  const getDeliveredQuantity = () => {
+    return departed
+      .filter((item) => isDelivered(item.id))
+      .reduce((sum, item) => sum + item.quantity, 0);
+  };
+
+  const getFilteredData = () => {
+    if (filter === "delivered") {
+      return departed.filter((item) => isDelivered(item.id));
+    } else if (filter === "notDelivered") {
+      return departed.filter((item) => !isDelivered(item.id));
+    }
+    return departed;
+  };
+
   const handleItemPress = (item: Departed) => {
     setSelectedItem(item);
     setShowDeliveryModal(true);
@@ -138,20 +160,72 @@ export default function DepartedScreen() {
             </Text>
           </View>
         </View>
-        <View style={styles.statsContainer}>
-          <View style={styles.statBox}>
-            <Text style={styles.statNumber}>{departed.length}</Text>
-            <Text style={styles.statLabel}>Išdavimų</Text>
+
+        <View style={styles.filterContainer}>
+          <TouchableOpacity
+            style={[
+              styles.filterButton,
+              filter === "all" && styles.filterButtonActive,
+            ]}
+            onPress={() => setFilter("all")}
+          >
+            <Text
+              style={[
+                styles.filterButtonText,
+                filter === "all" && styles.filterButtonTextActive,
+              ]}
+            >
+              Visos
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.filterButton,
+              filter === "notDelivered" && styles.filterButtonActive,
+            ]}
+            onPress={() => setFilter("notDelivered")}
+          >
+            <Text
+              style={[
+                styles.filterButtonText,
+                filter === "notDelivered" && styles.filterButtonTextActive,
+              ]}
+            >
+              Siunčiamos
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.filterButton,
+              filter === "delivered" && styles.filterButtonActive,
+            ]}
+            onPress={() => setFilter("delivered")}
+          >
+            <Text
+              style={[
+                styles.filterButtonText,
+                filter === "delivered" && styles.filterButtonTextActive,
+              ]}
+            >
+              Pristatytos
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.legendContainer}>
+          <View style={styles.legendItem}>
+            <View style={[styles.legendColor, styles.legendColorYellow]} />
+            <Text style={styles.legendText}>Siunčiamos</Text>
           </View>
-          <View style={styles.statBox}>
-            <Text style={styles.statNumber}>{getTotalDeparted()}</Text>
-            <Text style={styles.statLabel}>Vnt. išduota</Text>
+          <View style={styles.legendItem}>
+            <View style={[styles.legendColor, styles.legendColorGreen]} />
+            <Text style={styles.legendText}>Pristatytos</Text>
           </View>
         </View>
       </View>
 
       <FlatList
-        data={departed}
+        data={getFilteredData()}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => {
           const delivered = isDelivered(item.id);
@@ -304,28 +378,58 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
   },
-  statsContainer: {
+  filterContainer: {
     flexDirection: "row",
-    justifyContent: "space-around",
+    gap: 8,
   },
-  statBox: {
-    alignItems: "center",
-    backgroundColor: "#fff3cd",
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 12,
+  filterButton: {
     flex: 1,
-    marginHorizontal: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    backgroundColor: "#f0f0f0",
+    alignItems: "center",
   },
-  statNumber: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#856404",
+  filterButtonActive: {
+    backgroundColor: "#218838",
   },
-  statLabel: {
+  filterButtonText: {
+    fontSize: 13,
+    color: "#666",
+    fontWeight: "600",
+  },
+  filterButtonTextActive: {
+    color: "#fff",
+  },
+  legendContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 24,
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: "#e0e0e0",
+  },
+  legendItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  legendColor: {
+    width: 16,
+    height: 16,
+    borderRadius: 4,
+  },
+  legendColorYellow: {
+    backgroundColor: "#ffc107",
+  },
+  legendColorGreen: {
+    backgroundColor: "#28a745",
+  },
+  legendText: {
     fontSize: 12,
-    color: "#856404",
-    marginTop: 4,
+    color: "#666",
+    fontWeight: "500",
   },
   card: {
     backgroundColor: "#fff",

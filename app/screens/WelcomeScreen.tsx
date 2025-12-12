@@ -4,15 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export default function WelcomeScreen({ navigation }: any) {
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.decorTop} />
-      <View style={styles.decorBottom} />
-
       <View style={styles.content}>
-        <View style={styles.iconContainer}>
-          <View style={styles.iconInner}>
-            <View style={styles.boxIcon} />
-          </View>
-        </View>
         <Text style={styles.title}>Store Manager</Text>
         <Text style={styles.subtitle}>Sandėlio prekių valdymo sistema</Text>
         <Text style={styles.description}>
@@ -39,58 +31,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#f0f9f4",
     padding: 32,
-    overflow: "hidden",
-  },
-  decorTop: {
-    position: "absolute",
-    top: -100,
-    right: -100,
-    width: 300,
-    height: 300,
-    borderRadius: 150,
-    backgroundColor: "rgba(33, 136, 56, 0.1)",
-  },
-  decorBottom: {
-    position: "absolute",
-    bottom: -150,
-    left: -150,
-    width: 400,
-    height: 400,
-    borderRadius: 200,
-    backgroundColor: "rgba(33, 136, 56, 0.08)",
   },
   content: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    zIndex: 1,
-  },
-  iconContainer: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: "#218838",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 40,
-    shadowColor: "#218838",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 16,
-    elevation: 12,
-  },
-  iconInner: {
-    width: 70,
-    height: 70,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  boxIcon: {
-    width: 50,
-    height: 50,
-    borderWidth: 4,
-    borderColor: "#fff",
-    borderRadius: 8,
   },
   title: {
     fontSize: 42,
@@ -126,7 +71,6 @@ const styles = StyleSheet.create({
     elevation: 10,
     width: "100%",
     maxWidth: 320,
-    zIndex: 1,
   },
   buttonText: {
     color: "white",

@@ -161,6 +161,11 @@ export default function RemoveScreen() {
     <SafeAreaView style={styles.container}>
       {!cameraActive && !scanned && (
         <View style={styles.welcomeContainer}>
+          <View style={styles.userBadgeTop}>
+            <Text style={styles.userBadgeTopText}>
+              {user?.displayName || "Vartotojas"}
+            </Text>
+          </View>
           <View style={styles.iconCircle}>
             <View style={styles.minusIcon} />
           </View>
@@ -218,7 +223,7 @@ export default function RemoveScreen() {
             <Text style={styles.modalTitle}>Pasirinkite kiekį</Text>
             <Text style={styles.modalProductName}>{foundProduct?.name}</Text>
             <Text style={styles.modalProductInfo}>
-              Kodas: {foundProduct?.code}
+              Produktas: {foundProduct?.code}
             </Text>
             <Text style={styles.modalAvailable}>
               Sandėlyje: {foundProduct?.quantity} vnt.
@@ -288,6 +293,21 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     padding: 32,
+  },
+  userBadgeTop: {
+    position: "absolute",
+    top: 20,
+    right: 20,
+    backgroundColor: "#218838",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    elevation: 3,
+  },
+  userBadgeTopText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
   },
   iconCircle: {
     width: 100,

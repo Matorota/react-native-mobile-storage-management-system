@@ -23,27 +23,58 @@ interface Departed {
   quantity: number;
   departedAt: any;
   departedBy: { uid: string; name: string };
+  delivered?: boolean;
+}
+
+interface Delivery {
+  departedItemId: string;
+  productCode: string;
+  productName: string;
+  quantity: number;
+  comments: string;
+  deliveredAt: any;
+  confirmedBy: { uid: string; name: string };
 }
 
 export default function DepartedScreen() {
   const { user } = useAuth();
   const [departed, setDeparted] = useState<Departed[]>([]);
-  const [showOrderModal, setShowOrderModal] = useState(false);
-  const [arrivedQuantity, setArrivedQuantity] = useState("");
-  const [orderComments, setOrderComments] = useState("");
+  const [deliveries, setDeliveries] = useState<Delivery[]>([]);
+  const [showDeliveryModal, setShowDeliveryModal] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<Departed | null>(null);
+  const [deliveryComments, setDeliveryComments] = useState("");
 
   useEffect(() => {
-    const unsub = onSnapshot(collection(db, DEPARTED_COLLECTION), (snap) => {
+    const unsubDeparted = onSnapshot(
+      collection(db, DEPARTED_COLLECTION),
+      (snap) => {
+        const data = snap.docs.map((doc) => {
+          const docData = doc.data() as Departed;
+          return { ...docData, id: doc.id };
+        });
+        setDeparted(
+          data.sort((a, b) => b.departedAt?.seconds - a.departedAt?.seconds)
+        );
+      }
+    );
+
+    const unsubDeliveries = onSnapshot(collection(db, "deliveries"), (snap) => {
       const data = snap.docs.map((doc) => {
-        const docData = doc.data() as Departed;
+        const docData = doc.data() as Delivery;
         return { ...docData, id: doc.id };
       });
-      setDeparted(
-        data.sort((a, b) => b.departedAt?.seconds - a.departedAt?.seconds)
-      );
+      setDeliveries(data);
     });
-    return unsub;
+
+    return () => {
+      unsubDeparted();
+      unsubDeliveries();
+    };
   }, []);
+
+  const isDelivered = (departedItemId: string) => {
+    return deliveries.some((d) => d.departedItemId === departedItemId);
+  };
 
   const formatDate = (timestamp: any) => {
     if (!timestamp) return "Nežinoma data";
@@ -62,20 +93,23 @@ export default function DepartedScreen() {
     return departed.reduce((sum, item) => sum + item.quantity, 0);
   };
 
-  const handleOrderComplete = async () => {
-    const quantity = parseInt(arrivedQuantity);
+  const handleItemPress = (item: Departed) => {
+    setSelectedItem(item);
+    setShowDeliveryModal(true);
+  };
 
-    if (!quantity || quantity <= 0) {
-      Alert.alert("Klaida", "Prašome įvesti teisingą kiekį");
-      return;
-    }
+  const handleDeliveryConfirm = async () => {
+    if (!selectedItem) return;
 
     try {
-      await addDoc(collection(db, "orders"), {
-        arrivedQuantity: quantity,
-        comments: orderComments.trim(),
-        createdAt: Timestamp.now(),
-        createdBy: {
+      await addDoc(collection(db, "deliveries"), {
+        departedItemId: selectedItem.id,
+        productCode: selectedItem.code,
+        productName: selectedItem.name,
+        quantity: selectedItem.quantity,
+        comments: deliveryComments.trim(),
+        deliveredAt: Timestamp.now(),
+        confirmedBy: {
           uid: user?.uid,
           name: user?.displayName,
         },
@@ -83,20 +117,27 @@ export default function DepartedScreen() {
 
       Alert.alert(
         "Sėkmingai",
-        `Užsakymas patvirtintas! Atvyko ${quantity} vnt.`
+        `Prekė "${selectedItem.name}" (${selectedItem.quantity} vnt.) pristatyta klientui`
       );
-      setShowOrderModal(false);
-      setArrivedQuantity("");
-      setOrderComments("");
+      setShowDeliveryModal(false);
+      setSelectedItem(null);
+      setDeliveryComments("");
     } catch (error) {
-      Alert.alert("Klaida", "Nepavyko sukurti užsakymo");
+      Alert.alert("Klaida", "Nepavyko patvirtinti pristatymo");
     }
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Išvykusios prekės</Text>
+        <View style={styles.headerTop}>
+          <Text style={styles.title}>Išvykusios prekės</Text>
+          <View style={styles.userBadge}>
+            <Text style={styles.userBadgeText}>
+              {user?.displayName || "Vartotojas"}
+            </Text>
+          </View>
+        </View>
         <View style={styles.statsContainer}>
           <View style={styles.statBox}>
             <Text style={styles.statNumber}>{departed.length}</Text>
@@ -107,44 +148,54 @@ export default function DepartedScreen() {
             <Text style={styles.statLabel}>Vnt. išduota</Text>
           </View>
         </View>
-        <TouchableOpacity
-          style={styles.orderButton}
-          onPress={() => setShowOrderModal(true)}
-        >
-          <Text style={styles.orderButtonText}>+ Užsakymas padarytas</Text>
-        </TouchableOpacity>
       </View>
 
       <FlatList
         data={departed}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <View style={styles.card}>
-            <View style={styles.cardHeader}>
-              <View style={styles.cardHeaderLeft}>
-                <Text style={styles.name}>{item.name}</Text>
-                <Text style={styles.code}>Kodas: {item.code}</Text>
+        renderItem={({ item }) => {
+          const delivered = isDelivered(item.id);
+          return (
+            <TouchableOpacity
+              style={styles.card}
+              onPress={() => handleItemPress(item)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.cardHeader}>
+                <View style={styles.cardHeaderLeft}>
+                  <Text style={styles.name}>{item.name}</Text>
+                  <Text style={styles.code}>Produktas: {item.code}</Text>
+                </View>
+                <View
+                  style={[
+                    styles.quantityBadge,
+                    delivered && styles.quantityBadgeDelivered,
+                  ]}
+                >
+                  <Text style={styles.quantityLabel}>
+                    {delivered ? "Pristatyta" : "Kiekis"}
+                  </Text>
+                  <Text style={styles.quantityText}>{item.quantity}</Text>
+                </View>
               </View>
-              <View style={styles.quantityBadge}>
-                <Text style={styles.quantityLabel}>Kiekis</Text>
-                <Text style={styles.quantityText}>{item.quantity}</Text>
-              </View>
-            </View>
 
-            <View style={styles.cardFooter}>
-              <View style={styles.footerItem}>
-                <Text style={styles.footerLabel}>Išdavė:</Text>
-                <Text style={styles.footerValue}>{item.departedBy?.name}</Text>
+              <View style={styles.cardFooter}>
+                <View style={styles.footerItem}>
+                  <Text style={styles.footerLabel}>Išdavė:</Text>
+                  <Text style={styles.footerValue}>
+                    {item.departedBy?.name}
+                  </Text>
+                </View>
+                <View style={styles.footerItem}>
+                  <Text style={styles.footerLabel}>Data:</Text>
+                  <Text style={styles.footerValue}>
+                    {formatDate(item.departedAt)}
+                  </Text>
+                </View>
               </View>
-              <View style={styles.footerItem}>
-                <Text style={styles.footerLabel}>Data:</Text>
-                <Text style={styles.footerValue}>
-                  {formatDate(item.departedAt)}
-                </Text>
-              </View>
-            </View>
-          </View>
-        )}
+            </TouchableOpacity>
+          );
+        }}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <View style={styles.emptyIcon}>
@@ -159,40 +210,37 @@ export default function DepartedScreen() {
       />
 
       <Modal
-        visible={showOrderModal}
+        visible={showDeliveryModal}
         transparent={true}
         animationType="slide"
-        onRequestClose={() => setShowOrderModal(false)}
+        onRequestClose={() => setShowDeliveryModal(false)}
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Užsakymas padarytas</Text>
+            <Text style={styles.modalTitle}>Pristatymas klientui</Text>
             <Text style={styles.modalSubtitle}>
-              Užpildykite informaciją apie gautą užsakymą
+              Patvirtinkite, kad prekė pristatyta klientui
             </Text>
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Kiekis atvyko (vnt.) *</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Pvz: 50"
-                placeholderTextColor="#999"
-                keyboardType="numeric"
-                value={arrivedQuantity}
-                onChangeText={setArrivedQuantity}
-              />
+            <View style={styles.productInfoBox}>
+              <Text style={styles.productInfoLabel}>Prekė:</Text>
+              <Text style={styles.productInfoValue}>{selectedItem?.name}</Text>
+              <Text style={styles.productInfoLabel}>Kiekis:</Text>
+              <Text style={styles.productInfoValue}>
+                {selectedItem?.quantity} vnt.
+              </Text>
             </View>
 
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>Komentarai (neprivaloma)</Text>
               <TextInput
                 style={[styles.input, styles.textArea]}
-                placeholder="Papildoma informacija apie užsakymą..."
+                placeholder="Papildoma informacija apie pristatymą..."
                 placeholderTextColor="#999"
                 multiline
                 numberOfLines={4}
-                value={orderComments}
-                onChangeText={setOrderComments}
+                value={deliveryComments}
+                onChangeText={setDeliveryComments}
               />
             </View>
 
@@ -200,18 +248,20 @@ export default function DepartedScreen() {
               <TouchableOpacity
                 style={[styles.modalButton, styles.modalButtonCancel]}
                 onPress={() => {
-                  setShowOrderModal(false);
-                  setArrivedQuantity("");
-                  setOrderComments("");
+                  setShowDeliveryModal(false);
+                  setSelectedItem(null);
+                  setDeliveryComments("");
                 }}
               >
                 <Text style={styles.modalButtonTextCancel}>Atšaukti</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.modalButton, styles.modalButtonConfirm]}
-                onPress={handleOrderComplete}
+                onPress={handleDeliveryConfirm}
               >
-                <Text style={styles.modalButtonText}>Patvirtinti</Text>
+                <Text style={styles.modalButtonText}>
+                  Patvirtinti pristatymą
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -232,11 +282,27 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#e0e0e0",
   },
+  headerTop: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
   title: {
     fontSize: 28,
     fontWeight: "bold",
     color: "#218838",
-    marginBottom: 16,
+  },
+  userBadge: {
+    backgroundColor: "#218838",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  userBadgeText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
   },
   statsContainer: {
     flexDirection: "row",
@@ -306,6 +372,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     minWidth: 70,
   },
+  quantityBadgeDelivered: {
+    backgroundColor: "#28a745",
+  },
   quantityLabel: {
     color: "#fff",
     fontSize: 10,
@@ -367,23 +436,22 @@ const styles = StyleSheet.create({
     color: "#999",
     textAlign: "center",
   },
-  orderButton: {
-    backgroundColor: "#218838",
-    paddingVertical: 14,
-    paddingHorizontal: 24,
+  productInfoBox: {
+    backgroundColor: "#f0f9f4",
+    padding: 16,
     borderRadius: 12,
-    marginTop: 16,
-    elevation: 3,
-    shadowColor: "#218838",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
+    marginBottom: 20,
   },
-  orderButtonText: {
-    color: "#fff",
+  productInfoLabel: {
+    fontSize: 12,
+    color: "#666",
+    marginBottom: 4,
+    marginTop: 8,
+  },
+  productInfoValue: {
+    fontSize: 18,
+    color: "#218838",
     fontWeight: "bold",
-    fontSize: 16,
-    textAlign: "center",
   },
   modalOverlay: {
     flex: 1,

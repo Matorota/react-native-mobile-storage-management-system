@@ -4,6 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { onSnapshot, collection } from "firebase/firestore";
 import { db } from "../services/firebase";
 import { PRODUCTS_COLLECTION } from "../constants/firestore";
+import { useAuth } from "../context/AuthContext";
 
 interface Product {
   id: string;
@@ -16,6 +17,7 @@ interface Product {
 }
 
 export default function ProductsScreen() {
+  const { user } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -25,7 +27,9 @@ export default function ProductsScreen() {
         const docData = doc.data() as Product;
         return { ...docData, id: doc.id };
       });
-      setProducts(data.sort((a, b) => b.createdAt?.seconds - a.createdAt?.seconds));
+      setProducts(
+        data.sort((a, b) => b.createdAt?.seconds - a.createdAt?.seconds)
+      );
     });
     return unsub;
   }, []);
@@ -55,7 +59,14 @@ export default function ProductsScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Sandėlio prekės</Text>
+        <View style={styles.headerTop}>
+          <Text style={styles.title}>Sandėlio prekės</Text>
+          <View style={styles.userBadge}>
+            <Text style={styles.userBadgeText}>
+              {user?.displayName || "Vartotojas"}
+            </Text>
+          </View>
+        </View>
         <View style={styles.statsContainer}>
           <View style={styles.statBox}>
             <Text style={styles.statNumber}>{products.length}</Text>
@@ -83,7 +94,7 @@ export default function ProductsScreen() {
             <View style={styles.cardHeader}>
               <View style={styles.cardHeaderLeft}>
                 <Text style={styles.name}>{item.name}</Text>
-                <Text style={styles.code}>Kodas: {item.code}</Text>
+                <Text style={styles.code}>Produktas: {item.code}</Text>
               </View>
               <View style={styles.quantityBadge}>
                 <Text style={styles.quantityLabel}>Kiekis</Text>
@@ -121,7 +132,8 @@ export default function ProductsScreen() {
             </View>
             <Text style={styles.emptyText}>Sandėlyje nėra prekių</Text>
             <Text style={styles.emptySubtext}>
-              Naudokite "Pridėti" ekraną, kad pridėtumėte naujų prekių nuskanavę jų kodus
+              Naudokite "Pridėti" ekraną, kad pridėtumėte naujų prekių nuskanavę
+              jų kodus
             </Text>
           </View>
         }
@@ -141,11 +153,27 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#e0e0e0",
   },
+  headerTop: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
   title: {
     fontSize: 28,
     fontWeight: "bold",
     color: "#218838",
-    marginBottom: 16,
+  },
+  userBadge: {
+    backgroundColor: "#218838",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  userBadgeText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
   },
   statsContainer: {
     flexDirection: "row",

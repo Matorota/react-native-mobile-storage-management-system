@@ -17,7 +17,6 @@ import {
   PRODUCTS_COLLECTION,
   DEPARTED_COLLECTION,
 } from "../constants/firestore";
-import Animated, { FadeIn } from "react-native-reanimated";
 
 export default function RemoveScreen() {
   const { user } = useAuth();
@@ -64,19 +63,19 @@ export default function RemoveScreen() {
   if (!permission) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.permissionContainer}>
-          <Text style={styles.permissionText}>Prašome kameros leidimo...</Text>
-        </View>
+        <Text style={styles.permissionText}>Requesting camera permission...</Text>
       </SafeAreaView>
     );
   }
+
   if (!permission.granted) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.permissionContainer}>
-          <Text style={styles.permissionText}>Nėra prieigos prie kameros</Text>
+          <Text style={styles.permissionTitle}>📷</Text>
+          <Text style={styles.permissionText}>Camera permission required</Text>
           <TouchableOpacity style={styles.button} onPress={requestPermission}>
-            <Text style={styles.buttonText}>Suteikti leidimą</Text>
+            <Text style={styles.buttonText}>Grant Permission</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -94,12 +93,10 @@ export default function RemoveScreen() {
           onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
         />
       )}
-      {scanned && (
-        <Animated.View entering={FadeIn.duration(400)} style={styles.success}>
-          <Text style={styles.successText}>
-            {success.includes("nerasta") ? "✕" : "✓"} {success}
-          </Text>
-        </Animated.View>
+      {scanned && !!success && (
+        <View style={styles.success}>
+          <Text style={styles.successText}>✓ {success}</Text>
+        </View>
       )}
     </SafeAreaView>
   );
@@ -113,16 +110,39 @@ const styles = StyleSheet.create({
     backgroundColor: "#000",
   },
   permissionContainer: {
+    alignItems: "center",
     padding: 32,
     backgroundColor: "#fff",
     borderRadius: 16,
-    alignItems: "center",
+    margin: 20,
+  },
+  permissionTitle: {
+    fontSize: 64,
+    marginBottom: 16,
   },
   permissionText: {
-    fontSize: 18,
-    color: "#333",
-    marginBottom: 20,
+    fontSize: 16,
+    color: "#666",
     textAlign: "center",
+    marginBottom: 20,
+  },
+  button: {
+    backgroundColor: "#218838",
+    padding: 18,
+    borderRadius: 12,
+    marginTop: 8,
+    width: "100%",
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+  },
+  buttonText: {
+    color: "white",
+    fontWeight: "bold",
+    textAlign: "center",
+    fontSize: 16,
   },
   success: {
     padding: 32,
@@ -136,18 +156,5 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#218838",
     textAlign: "center",
-  },
-  button: {
-    backgroundColor: "#218838",
-    padding: 18,
-    borderRadius: 12,
-    marginTop: 16,
-    elevation: 3,
-  },
-  buttonText: {
-    color: "white",
-    fontWeight: "bold",
-    textAlign: "center",
-    fontSize: 16,
   },
 });

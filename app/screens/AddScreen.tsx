@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   View,
   Text,
@@ -19,14 +19,6 @@ import {
 import { db } from "../services/firebase";
 import { PRODUCTS_COLLECTION } from "../constants/firestore";
 import { useAuth } from "../context/AuthContext";
-import Animated, {
-  FadeIn,
-  FadeInDown,
-  useSharedValue,
-  useAnimatedStyle,
-  withSequence,
-  withTiming,
-} from "react-native-reanimated";
 
 export default function AddScreen() {
   const { user } = useAuth();
@@ -39,8 +31,6 @@ export default function AddScreen() {
   const [showForm, setShowForm] = useState(false);
   const [success, setSuccess] = useState("");
 
-  const buttonScale = useSharedValue(1);
-
   const handleBarCodeScanned = async ({ data }: { data: string }) => {
     setCode(data);
     setScanned(true);
@@ -51,16 +41,16 @@ export default function AddScreen() {
       const qty = found.data().quantity;
       await updateDoc(ref, { quantity: qty + 1 });
       setSuccess("Kiekis padidintas");
+      setTimeout(() => {
+        setScanned(false);
+        setSuccess("");
+      }, 2000);
     } else {
       setShowForm(true);
     }
   };
 
   const handleAdd = async () => {
-    buttonScale.value = withSequence(
-      withTiming(0.95, { duration: 100 }),
-      withTiming(1, { duration: 100 })
-    );
     await addDoc(collection(db, PRODUCTS_COLLECTION), {
       code,
       name,
@@ -80,24 +70,24 @@ export default function AddScreen() {
     }, 2000);
   };
 
-  const buttonAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: buttonScale.value }],
-  }));
-
   if (!permission) {
     return (
       <SafeAreaView style={styles.container}>
-        <Text>Requesting camera permission...</Text>
+        <Text style={styles.permissionText}>Requesting camera permission...</Text>
       </SafeAreaView>
     );
   }
+
   if (!permission.granted) {
     return (
       <SafeAreaView style={styles.container}>
-        <Text>No access to camera</Text>
-        <TouchableOpacity style={styles.button} onPress={requestPermission}>
-          <Text style={styles.buttonText}>Grant Permission</Text>
-        </TouchableOpacity>
+        <View style={styles.permissionContainer}>
+          <Text style={styles.permissionTitle}>📷</Text>
+          <Text style={styles.permissionText}>Camera permission required</Text>
+          <TouchableOpacity style={styles.button} onPress={requestPermission}>
+            <Text style={styles.buttonText}>Grant Permission</Text>
+          </TouchableOpacity>
+        </View>
       </SafeAreaView>
     );
   }
@@ -113,8 +103,9 @@ export default function AddScreen() {
           onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
         />
       )}
+      
       {scanned && showForm && (
-        <Animated.View entering={FadeInDown.duration(400)} style={styles.form}>
+        <View style={styles.form}>
           <Text style={styles.formTitle}>Nauja prekė</Text>
           <TextInput
             style={styles.input}
@@ -136,29 +127,29 @@ export default function AddScreen() {
             placeholder="Kiekis"
             placeholderTextColor="#999"
             value={quantity.toString()}
-            onChangeText={(v) => setQuantity(Number(v))}
+            onChangeText={(v) => setQuantity(Number(v) || 1)}
             keyboardType="numeric"
           />
-          <Animated.View style={buttonAnimatedStyle}>
-            <TouchableOpacity style={styles.button} onPress={handleAdd}>
-              <Text style={styles.buttonText}>✓ Pridėti</Text>
-            </TouchableOpacity>
-          </Animated.View>
+          <TouchableOpacity style={styles.button} onPress={handleAdd}>
+            <Text style={styles.buttonText}>✓ Pridėti</Text>
+          </TouchableOpacity>
           <TouchableOpacity
             style={[styles.button, styles.cancelButton]}
             onPress={() => {
               setScanned(false);
               setShowForm(false);
+              setCode("");
             }}
           >
             <Text style={styles.buttonText}>✕ Atšaukti</Text>
           </TouchableOpacity>
-        </Animated.View>
+        </View>
       )}
+      
       {scanned && !showForm && !!success && (
-        <Animated.View entering={FadeIn.duration(400)} style={styles.success}>
+        <View style={styles.success}>
           <Text style={styles.successText}>✓ {success}</Text>
-        </Animated.View>
+        </View>
       )}
     </SafeAreaView>
   );
@@ -171,12 +162,31 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#000",
   },
+  permissionContainer: {
+    alignItems: "center",
+    padding: 32,
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    margin: 20,
+  },
+  permissionTitle: {
+    fontSize: 64,
+    marginBottom: 16,
+  },
+  permissionText: {
+    fontSize: 16,
+    color: "#666",
+    textAlign: "center",
+    marginBottom: 20,
+  },
   form: {
     width: "100%",
     padding: 24,
     backgroundColor: "#fff",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
+    position: "absolute",
+    bottom: 0,
   },
   formTitle: {
     fontSize: 24,
@@ -223,6 +233,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     margin: 20,
     elevation: 5,
+    position: "absolute",
   },
   successText: {
     fontSize: 20,

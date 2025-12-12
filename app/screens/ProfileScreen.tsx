@@ -3,16 +3,9 @@ import { View, Text, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { signOut } from "firebase/auth";
 import { auth } from "../services/firebase";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSequence,
-  withTiming,
-} from "react-native-reanimated";
 
 export default function ProfileScreen() {
   const { user, setUser } = useAuth();
-  const buttonScale = useSharedValue(1);
 
   const handleLogout = () => {
     Alert.alert(
@@ -33,18 +26,6 @@ export default function ProfileScreen() {
         },
       ]
     );
-  };
-
-  const buttonAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: buttonScale.value }],
-  }));
-
-  const handlePress = () => {
-    buttonScale.value = withSequence(
-      withTiming(0.95, { duration: 100 }),
-      withTiming(1, { duration: 100 })
-    );
-    setTimeout(handleLogout, 200);
   };
 
   return (
@@ -74,15 +55,13 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        <Animated.View style={buttonAnimatedStyle}>
-          <TouchableOpacity
-            style={styles.logoutButton}
-            onPress={handlePress}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.logoutButtonText}>Atsijungti</Text>
-          </TouchableOpacity>
-        </Animated.View>
+        <TouchableOpacity
+          style={styles.logoutButton}
+          onPress={handleLogout}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.logoutButtonText}>Atsijungti</Text>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
@@ -105,59 +84,60 @@ const styles = StyleSheet.create({
     backgroundColor: "#218838",
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 32,
-    marginBottom: 24,
+    marginTop: 20,
+    marginBottom: 16,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 6,
   },
   avatar: {
     fontSize: 48,
     fontWeight: "bold",
-    color: "#fff",
+    color: "white",
   },
   title: {
     fontSize: 28,
     fontWeight: "bold",
+    color: "#218838",
     marginBottom: 32,
-    color: "#212529",
   },
   infoCard: {
     width: "100%",
     backgroundColor: "#fff",
-    borderRadius: 16,
+    borderRadius: 12,
     padding: 20,
     marginBottom: 32,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 8,
+    shadowRadius: 4,
     elevation: 3,
   },
   infoRow: {
     paddingVertical: 12,
   },
   label: {
-    fontSize: 14,
-    color: "#6c757d",
+    fontSize: 12,
+    color: "#999",
     marginBottom: 4,
-    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: 1,
   },
   value: {
-    fontSize: 18,
-    color: "#212529",
+    fontSize: 16,
+    color: "#333",
     fontWeight: "500",
   },
   valueSmall: {
     fontSize: 12,
-    color: "#495057",
+    color: "#666",
     fontFamily: "monospace",
   },
   divider: {
     height: 1,
-    backgroundColor: "#e9ecef",
+    backgroundColor: "#eee",
     marginVertical: 8,
   },
   logoutButton: {
@@ -165,6 +145,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 48,
     borderRadius: 12,
+    width: "100%",
     shadowColor: "#dc3545",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,

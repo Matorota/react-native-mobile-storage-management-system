@@ -1,5 +1,5 @@
 import { useAuth } from "../context/AuthContext";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CameraView, useCameraPermissions } from "expo-camera";
@@ -17,6 +17,7 @@ import {
   PRODUCTS_COLLECTION,
   DEPARTED_COLLECTION,
 } from "../constants/firestore";
+import Animated, { FadeIn } from "react-native-reanimated";
 
 export default function RemoveScreen() {
   const { user } = useAuth();
@@ -63,17 +64,21 @@ export default function RemoveScreen() {
   if (!permission) {
     return (
       <SafeAreaView style={styles.container}>
-        <Text>Requesting camera permission...</Text>
+        <View style={styles.permissionContainer}>
+          <Text style={styles.permissionText}>Prašome kameros leidimo...</Text>
+        </View>
       </SafeAreaView>
     );
   }
   if (!permission.granted) {
     return (
       <SafeAreaView style={styles.container}>
-        <Text>No access to camera</Text>
-        <TouchableOpacity style={styles.button} onPress={requestPermission}>
-          <Text style={styles.buttonText}>Grant Permission</Text>
-        </TouchableOpacity>
+        <View style={styles.permissionContainer}>
+          <Text style={styles.permissionText}>Nėra prieigos prie kameros</Text>
+          <TouchableOpacity style={styles.button} onPress={requestPermission}>
+            <Text style={styles.buttonText}>Suteikti leidimą</Text>
+          </TouchableOpacity>
+        </View>
       </SafeAreaView>
     );
   }
@@ -90,22 +95,59 @@ export default function RemoveScreen() {
         />
       )}
       {scanned && (
-        <View style={styles.success}>
-          <Text style={{ fontSize: 18, fontWeight: "bold" }}>{success}</Text>
-        </View>
+        <Animated.View entering={FadeIn.duration(400)} style={styles.success}>
+          <Text style={styles.successText}>
+            {success.includes("nerasta") ? "✕" : "✓"} {success}
+          </Text>
+        </Animated.View>
       )}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: "center", alignItems: "center" },
-  success: { padding: 24, backgroundColor: "#f8d7da", borderRadius: 8 },
+  container: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#000",
+  },
+  permissionContainer: {
+    padding: 32,
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    alignItems: "center",
+  },
+  permissionText: {
+    fontSize: 18,
+    color: "#333",
+    marginBottom: 20,
+    textAlign: "center",
+  },
+  success: {
+    padding: 32,
+    backgroundColor: "#d4edda",
+    borderRadius: 16,
+    margin: 20,
+    elevation: 5,
+  },
+  successText: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#218838",
+    textAlign: "center",
+  },
   button: {
     backgroundColor: "#218838",
-    padding: 16,
-    borderRadius: 8,
+    padding: 18,
+    borderRadius: 12,
     marginTop: 16,
+    elevation: 3,
   },
-  buttonText: { color: "white", fontWeight: "bold", textAlign: "center" },
+  buttonText: {
+    color: "white",
+    fontWeight: "bold",
+    textAlign: "center",
+    fontSize: 16,
+  },
 });

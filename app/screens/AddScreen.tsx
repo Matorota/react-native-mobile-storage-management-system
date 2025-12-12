@@ -19,6 +19,14 @@ import {
 import { db } from "../services/firebase";
 import { PRODUCTS_COLLECTION } from "../constants/firestore";
 import { useAuth } from "../context/AuthContext";
+import Animated, {
+  FadeIn,
+  FadeInDown,
+  useSharedValue,
+  useAnimatedStyle,
+  withSequence,
+  withTiming,
+} from "react-native-reanimated";
 
 export default function AddScreen() {
   const { user } = useAuth();
@@ -30,6 +38,8 @@ export default function AddScreen() {
   const [quantity, setQuantity] = useState(1);
   const [showForm, setShowForm] = useState(false);
   const [success, setSuccess] = useState("");
+
+  const buttonScale = useSharedValue(1);
 
   const handleBarCodeScanned = async ({ data }: { data: string }) => {
     setCode(data);
@@ -47,6 +57,10 @@ export default function AddScreen() {
   };
 
   const handleAdd = async () => {
+    buttonScale.value = withSequence(
+      withTiming(0.95, { duration: 100 }),
+      withTiming(1, { duration: 100 })
+    );
     await addDoc(collection(db, PRODUCTS_COLLECTION), {
       code,
       name,
@@ -65,6 +79,10 @@ export default function AddScreen() {
       setQuantity(1);
     }, 2000);
   };
+
+  const buttonAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: buttonScale.value }],
+  }));
 
   if (!permission) {
     return (
@@ -96,67 +114,120 @@ export default function AddScreen() {
         />
       )}
       {scanned && showForm && (
-        <View style={styles.form}>
+        <Animated.View entering={FadeInDown.duration(400)} style={styles.form}>
+          <Text style={styles.formTitle}>Nauja prekė</Text>
           <TextInput
             style={styles.input}
             placeholder="Pavadinimas"
+            placeholderTextColor="#999"
             value={name}
             onChangeText={setName}
           />
           <TextInput
             style={styles.input}
             placeholder="Aprašymas"
+            placeholderTextColor="#999"
             value={description}
             onChangeText={setDescription}
+            multiline
           />
           <TextInput
             style={styles.input}
             placeholder="Kiekis"
+            placeholderTextColor="#999"
             value={quantity.toString()}
             onChangeText={(v) => setQuantity(Number(v))}
             keyboardType="numeric"
           />
-          <TouchableOpacity style={styles.button} onPress={handleAdd}>
-            <Text style={styles.buttonText}>Pridėti</Text>
-          </TouchableOpacity>
+          <Animated.View style={buttonAnimatedStyle}>
+            <TouchableOpacity style={styles.button} onPress={handleAdd}>
+              <Text style={styles.buttonText}>✓ Pridėti</Text>
+            </TouchableOpacity>
+          </Animated.View>
           <TouchableOpacity
-            style={[styles.button, { backgroundColor: "#666" }]}
+            style={[styles.button, styles.cancelButton]}
             onPress={() => {
               setScanned(false);
               setShowForm(false);
             }}
           >
-            <Text style={styles.buttonText}>Atšaukti</Text>
+            <Text style={styles.buttonText}>✕ Atšaukti</Text>
           </TouchableOpacity>
-        </View>
+        </Animated.View>
       )}
       {scanned && !showForm && !!success && (
-        <View style={styles.success}>
-          <Text style={{ fontSize: 18, fontWeight: "bold" }}>{success}</Text>
-        </View>
+        <Animated.View entering={FadeIn.duration(400)} style={styles.success}>
+          <Text style={styles.successText}>✓ {success}</Text>
+        </Animated.View>
       )}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: "center", alignItems: "center" },
-  form: { width: "100%", padding: 24 },
+  container: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#000",
+  },
+  form: {
+    width: "100%",
+    padding: 24,
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+  formTitle: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#218838",
+    marginBottom: 20,
+    textAlign: "center",
+  },
   input: {
     width: "100%",
-    padding: 12,
+    padding: 16,
     borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    marginBottom: 12,
+    borderColor: "#ddd",
+    borderRadius: 12,
+    marginBottom: 16,
+    fontSize: 16,
+    backgroundColor: "#f9f9f9",
   },
   button: {
     backgroundColor: "#218838",
-    padding: 16,
-    borderRadius: 8,
+    padding: 18,
+    borderRadius: 12,
     marginTop: 8,
     width: "100%",
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
   },
-  buttonText: { color: "white", fontWeight: "bold", textAlign: "center" },
-  success: { padding: 24, backgroundColor: "#d4edda", borderRadius: 8 },
+  cancelButton: {
+    backgroundColor: "#666",
+    marginTop: 12,
+  },
+  buttonText: {
+    color: "white",
+    fontWeight: "bold",
+    textAlign: "center",
+    fontSize: 16,
+  },
+  success: {
+    padding: 32,
+    backgroundColor: "#d4edda",
+    borderRadius: 16,
+    margin: 20,
+    elevation: 5,
+  },
+  successText: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#218838",
+    textAlign: "center",
+  },
 });

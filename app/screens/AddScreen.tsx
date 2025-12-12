@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,7 +7,7 @@ import {
   StyleSheet,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { BarCodeScanner } from "expo-barcode-scanner";
+import { CameraView, useCameraPermissions } from "expo-camera";
 import {
   addDoc,
   collection,
@@ -22,26 +22,25 @@ import { useAuth } from "../context/AuthContext";
 
 export default function AddScreen() {
   const { user } = useAuth();
+  const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
   const [code, setCode] = useState("");
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [showForm, setShowForm] = useState(false);
+  const [success, setSuccess] = useState("");
 
-  const handleBarCodeScanned = ({ data }: { data: string }) => {
+  const handleBarCodeScanned = async ({ data }: { data: string }) => {
     setCode(data);
     setScanned(true);
-    checkProduct(data);
-  };
-
-  const checkProduct = async (code: string) => {
     const snap = await getDocs(collection(db, PRODUCTS_COLLECTION));
-    const found = snap.docs.find((doc) => doc.data().code === code);
+    const found = snap.docs.find((doc) => doc.data().code === data);
     if (found) {
       const ref = doc(db, PRODUCTS_COLLECTION, found.id);
-      await updateDoc(ref, { quantity: found.data().quantity + 1 });
-      setShowForm(false);
+      const qty = found.data().quantity;
+      await updateDoc(ref, { quantity: qty + 1 });
+      setSuccess("Kiekis padidintas");
     } else {
       setShowForm(true);
     }
@@ -56,20 +55,44 @@ export default function AddScreen() {
       quantity,
       createdBy: { uid: user?.uid, name: user?.displayName },
     });
+    setSuccess("Prekė pridėta");
     setShowForm(false);
-    setScanned(false);
-    setCode("");
-    setName("");
-    setDescription("");
-    setQuantity(1);
+    setTimeout(() => {
+      setScanned(false);
+      setSuccess("");
+      setName("");
+      setDescription("");
+      setQuantity(1);
+    }, 2000);
   };
+
+  if (!permission) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Text>Requesting camera permission...</Text>
+      </SafeAreaView>
+    );
+  }
+  if (!permission.granted) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Text>No access to camera</Text>
+        <TouchableOpacity style={styles.button} onPress={requestPermission}>
+          <Text style={styles.buttonText}>Grant Permission</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
       {!scanned && (
-        <BarCodeScanner
-          onBarCodeScanned={handleBarCodeScanned}
+        <CameraView
           style={StyleSheet.absoluteFillObject}
+          barcodeScannerSettings={{
+            barcodeTypes: ["qr", "ean13", "ean8", "code128", "code39"],
+          }}
+          onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
         />
       )}
       {scanned && showForm && (
@@ -89,18 +112,27 @@ export default function AddScreen() {
           <TextInput
             style={styles.input}
             placeholder="Kiekis"
-            value={String(quantity)}
+            value={quantity.toString()}
             onChangeText={(v) => setQuantity(Number(v))}
             keyboardType="numeric"
           />
           <TouchableOpacity style={styles.button} onPress={handleAdd}>
-            <Text style={styles.buttonText}>Pridėti prekę</Text>
+            <Text style={styles.buttonText}>Pridėti</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.button, { backgroundColor: "#666" }]}
+            onPress={() => {
+              setScanned(false);
+              setShowForm(false);
+            }}
+          >
+            <Text style={styles.buttonText}>Atšaukti</Text>
           </TouchableOpacity>
         </View>
       )}
-      {scanned && !showForm && (
+      {scanned && !showForm && !!success && (
         <View style={styles.success}>
-          <Text>Prekė atnaujinta!</Text>
+          <Text style={{ fontSize: 18, fontWeight: "bold" }}>{success}</Text>
         </View>
       )}
     </SafeAreaView>

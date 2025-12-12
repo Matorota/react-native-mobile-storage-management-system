@@ -1,3 +1,4 @@
+import { useAuth } from "../context/AuthContext";
 import { useState } from "react";
 import {
   View,
@@ -8,11 +9,11 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
-  signInWithEmailAndPassword,
+  getAuth,
   createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
   updateProfile,
 } from "firebase/auth";
-import { useAuth } from "../context/AuthContext";
 import { auth } from "../services/firebase";
 
 export default function AuthScreen() {
@@ -52,14 +53,6 @@ export default function AuthScreen() {
         <Text style={styles.title}>
           {isRegister ? "Registracija" : "Prisijungimas"}
         </Text>
-        {isRegister && (
-          <TextInput
-            style={styles.input}
-            placeholder="Vardas"
-            value={name}
-            onChangeText={setName}
-          />
-        )}
         <TextInput
           style={styles.input}
           placeholder="El. paštas"
@@ -74,13 +67,21 @@ export default function AuthScreen() {
           onChangeText={setPassword}
           secureTextEntry
         />
+        {isRegister && (
+          <TextInput
+            style={styles.input}
+            placeholder="Vardas"
+            value={name}
+            onChangeText={setName}
+          />
+        )}
         {!!error && <Text style={styles.error}>{error}</Text>}
         <TouchableOpacity style={styles.button} onPress={handleAuth}>
           <Text style={styles.buttonText}>
             {isRegister ? "Registruotis" : "Prisijungti"}
           </Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => setIsRegister(!isRegister)}>
+        <TouchableOpacity onPress={() => setIsRegister((v) => !v)}>
           <Text style={styles.switch}>
             {isRegister
               ? "Turi paskyrą? Prisijunk"

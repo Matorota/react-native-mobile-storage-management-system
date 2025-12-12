@@ -1,25 +1,26 @@
-import { useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { useAuth } from "../context/AuthContext";
+import { useState, useEffect } from "react";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { BarCodeScanner } from "expo-barcode-scanner";
+import { CameraView, useCameraPermissions } from "expo-camera";
 import {
-  collection,
   getDocs,
-  updateDoc,
-  deleteDoc,
+  collection,
   doc,
-  Timestamp,
+  updateDoc,
   addDoc,
+  Timestamp,
+  deleteDoc,
 } from "firebase/firestore";
 import { db } from "../services/firebase";
 import {
   PRODUCTS_COLLECTION,
   DEPARTED_COLLECTION,
 } from "../constants/firestore";
-import { useAuth } from "../context/AuthContext";
 
 export default function RemoveScreen() {
   const { user } = useAuth();
+  const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
   const [code, setCode] = useState("");
   const [success, setSuccess] = useState("");
@@ -34,10 +35,8 @@ export default function RemoveScreen() {
       const qty = found.data().quantity;
       if (qty > 1) {
         await updateDoc(ref, { quantity: qty - 1 });
-        setSuccess("Kiekis sumažintas");
       } else {
         await deleteDoc(ref);
-        setSuccess("Prekė ištrinta");
       }
       await addDoc(collection(db, DEPARTED_COLLECTION), {
         productRefId: found.id,
@@ -47,22 +46,52 @@ export default function RemoveScreen() {
         departedAt: Timestamp.now(),
         departedBy: { uid: user?.uid, name: user?.displayName },
       });
+      setSuccess("Prekė ištrinta/išduota");
+      setTimeout(() => {
+        setScanned(false);
+        setSuccess("");
+      }, 2000);
     } else {
       setSuccess("Prekė nerasta");
+      setTimeout(() => {
+        setScanned(false);
+        setSuccess("");
+      }, 2000);
     }
   };
+
+  if (!permission) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Text>Requesting camera permission...</Text>
+      </SafeAreaView>
+    );
+  }
+  if (!permission.granted) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Text>No access to camera</Text>
+        <TouchableOpacity style={styles.button} onPress={requestPermission}>
+          <Text style={styles.buttonText}>Grant Permission</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
       {!scanned && (
-        <BarCodeScanner
-          onBarCodeScanned={handleBarCodeScanned}
+        <CameraView
           style={StyleSheet.absoluteFillObject}
+          barcodeScannerSettings={{
+            barcodeTypes: ["qr", "ean13", "ean8", "code128", "code39"],
+          }}
+          onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
         />
       )}
       {scanned && (
         <View style={styles.success}>
-          <Text>{success}</Text>
+          <Text style={{ fontSize: 18, fontWeight: "bold" }}>{success}</Text>
         </View>
       )}
     </SafeAreaView>
@@ -72,4 +101,11 @@ export default function RemoveScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: "center", alignItems: "center" },
   success: { padding: 24, backgroundColor: "#f8d7da", borderRadius: 8 },
+  button: {
+    backgroundColor: "#218838",
+    padding: 16,
+    borderRadius: 8,
+    marginTop: 16,
+  },
+  buttonText: { color: "white", fontWeight: "bold", textAlign: "center" },
 });

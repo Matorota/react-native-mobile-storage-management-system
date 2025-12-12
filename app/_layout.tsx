@@ -1,41 +1,34 @@
 import React from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { AuthProvider, useAuth } from "./context/AuthContext";
+import BottomTabs from "./navigation/BottomTabs";
+import AuthScreen from "./screens/AuthScreen";
+import WelcomeScreen from "./screens/WelcomeScreen";
 import "./global.css";
-
-// Import screens
-import HomeScreen from "./index";
-import AboutScreen from "./about";
-import ContactScreen from "./contact";
-import SettingsScreen from "./settings";
 
 const Stack = createNativeStackNavigator();
 
+function MainNavigator() {
+  const { user } = useAuth();
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      {!user ? (
+        <>
+          <Stack.Screen name="Welcome" component={WelcomeScreen} />
+          <Stack.Screen name="Auth" component={AuthScreen} />
+        </>
+      ) : (
+        <Stack.Screen name="Main" component={BottomTabs} />
+      )}
+    </Stack.Navigator>
+  );
+}
+
 export default function RootLayout() {
   return (
-    <NavigationContainer>
-      <Stack.Navigator initialRouteName="Home">
-        <Stack.Screen
-          name="Home"
-          component={HomeScreen}
-          options={{ title: "Pagrindinis puslapis" }}
-        />
-        <Stack.Screen
-          name="About"
-          component={AboutScreen}
-          options={{ title: "Apie mus" }}
-        />
-        <Stack.Screen
-          name="Contact"
-          component={ContactScreen}
-          options={{ title: "Kontaktai" }}
-        />
-        <Stack.Screen
-          name="Settings"
-          component={SettingsScreen}
-          options={{ title: "Nustatymai" }}
-        />
-      </Stack.Navigator>
-    </NavigationContainer>
+    <AuthProvider>
+      <MainNavigator />
+    </AuthProvider>
   );
 }

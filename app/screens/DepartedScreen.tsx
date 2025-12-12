@@ -1,29 +1,48 @@
 import { useEffect, useState } from "react";
 import { View, Text, FlatList, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { collection, onSnapshot } from "firebase/firestore";
+import { onSnapshot, collection } from "firebase/firestore";
 import { db } from "../services/firebase";
-import { PRODUCTS_COLLECTION } from "../constants/firestore";
+import { DEPARTED_COLLECTION } from "../constants/firestore";
 
-export default function ProductsScreen() {
-  const [products, setProducts] = useState<any[]>([]);
+interface Departed {
+  id: string;
+  productRefId: string;
+  code: string;
+  name: string;
+  quantity: number;
+  departedAt: any;
+  departedBy: { uid: string; name: string };
+}
+
+export default function DepartedScreen() {
+  const [departed, setDeparted] = useState<Departed[]>([]);
   useEffect(() => {
-    const unsub = onSnapshot(collection(db, PRODUCTS_COLLECTION), (snap) => {
-      setProducts(snap.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+    const unsub = onSnapshot(collection(db, DEPARTED_COLLECTION), (snap) => {
+      setDeparted(
+        snap.docs.map((doc) => {
+          const data = doc.data() as Departed;
+          return { ...data, id: doc.id };
+        })
+      );
     });
     return unsub;
   }, []);
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>Sandėlio prekės</Text>
+      <Text style={styles.title}>Išvykusios prekės</Text>
       <FlatList
-        data={products}
+        data={departed}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <View style={styles.card}>
             <Text style={styles.name}>{item.name}</Text>
             <Text style={styles.code}>{item.code}</Text>
             <Text style={styles.qty}>Kiekis: {item.quantity}</Text>
+            <Text style={styles.date}>
+              Išvykimo data: {item.departedAt?.toDate?.().toLocaleString?.()}
+            </Text>
+            <Text style={styles.by}>Išdavė: {item.departedBy?.name}</Text>
           </View>
         )}
       />
@@ -44,4 +63,6 @@ const styles = StyleSheet.create({
   name: { fontSize: 18, fontWeight: "bold" },
   code: { fontSize: 14, color: "#555" },
   qty: { fontSize: 16, color: "#218838", fontWeight: "bold" },
+  date: { fontSize: 14, color: "#555" },
+  by: { fontSize: 14, color: "#218838" },
 });

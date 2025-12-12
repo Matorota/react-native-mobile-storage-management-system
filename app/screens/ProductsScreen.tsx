@@ -1,33 +1,44 @@
 import { useEffect, useState } from "react";
 import { View, Text, FlatList, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { collection, onSnapshot } from "firebase/firestore";
+import { onSnapshot, collection } from "firebase/firestore";
 import { db } from "../services/firebase";
-import { DEPARTED_COLLECTION } from "../constants/firestore";
+import { PRODUCTS_COLLECTION } from "../constants/firestore";
 
-export default function DepartedScreen() {
-  const [departed, setDeparted] = useState<any[]>([]);
+interface Product {
+  id: string;
+  code: string;
+  name: string;
+  description: string;
+  createdAt: any;
+  quantity: number;
+  createdBy: { uid: string; name: string };
+}
+
+export default function ProductsScreen() {
+  const [products, setProducts] = useState<Product[]>([]);
   useEffect(() => {
-    const unsub = onSnapshot(collection(db, DEPARTED_COLLECTION), (snap) => {
-      setDeparted(snap.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+    const unsub = onSnapshot(collection(db, PRODUCTS_COLLECTION), (snap) => {
+      setProducts(
+        snap.docs.map((doc) => {
+          const data = doc.data() as Product;
+          return { ...data, id: doc.id };
+        })
+      );
     });
     return unsub;
   }, []);
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>Išvykusios prekės</Text>
+      <Text style={styles.title}>Sandėlio prekės</Text>
       <FlatList
-        data={departed}
+        data={products}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <View style={styles.card}>
             <Text style={styles.name}>{item.name}</Text>
             <Text style={styles.code}>{item.code}</Text>
             <Text style={styles.qty}>Kiekis: {item.quantity}</Text>
-            <Text style={styles.date}>
-              Išvykimo data: {item.departedAt?.toDate?.().toLocaleString?.()}
-            </Text>
-            <Text style={styles.by}>Darbuotojas: {item.departedBy?.name}</Text>
           </View>
         )}
       />
@@ -48,6 +59,4 @@ const styles = StyleSheet.create({
   name: { fontSize: 18, fontWeight: "bold" },
   code: { fontSize: 14, color: "#555" },
   qty: { fontSize: 16, color: "#218838", fontWeight: "bold" },
-  date: { fontSize: 14, color: "#555" },
-  by: { fontSize: 14, color: "#218838" },
 });

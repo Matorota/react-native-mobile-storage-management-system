@@ -67,9 +67,6 @@ export default function AuthScreen() {
       >
         <ScrollView contentContainerStyle={styles.scrollView}>
           <View style={styles.header}>
-            <View style={styles.iconContainer}>
-              <Text style={styles.icon}>🔐</Text>
-            </View>
             <Text style={styles.title}>
               {isRegister ? "Sukurti paskyrą" : "Prisijungti"}
             </Text>
@@ -161,30 +158,13 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: "center",
-    marginBottom: 32,
-  },
-  iconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: "#218838",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 4,
-  },
-  icon: {
-    fontSize: 40,
+    marginBottom: 40,
   },
   title: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: "bold",
-    marginBottom: 8,
-    color: "#212529",
+    marginBottom: 12,
+    color: "#218838",
   },
   subtitle: {
     fontSize: 16,

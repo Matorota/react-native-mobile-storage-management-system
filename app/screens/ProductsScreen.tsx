@@ -25,7 +25,7 @@ export default function ProductsScreen() {
         const docData = doc.data() as Product;
         return { ...docData, id: doc.id };
       });
-      setProducts(data);
+      setProducts(data.sort((a, b) => b.createdAt?.seconds - a.createdAt?.seconds));
     });
     return unsub;
   }, []);
@@ -35,9 +35,39 @@ export default function ProductsScreen() {
     setTimeout(() => setRefreshing(false), 1000);
   };
 
+  const formatDate = (timestamp: any) => {
+    if (!timestamp) return "Nežinoma data";
+    const date = timestamp.toDate?.();
+    if (!date) return "Nežinoma data";
+    return date.toLocaleDateString("lt-LT", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const getTotalItems = () => {
+    return products.reduce((sum, product) => sum + product.quantity, 0);
+  };
+
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>Sandėlio prekės</Text>
+      <View style={styles.header}>
+        <Text style={styles.title}>Sandėlio prekės</Text>
+        <View style={styles.statsContainer}>
+          <View style={styles.statBox}>
+            <Text style={styles.statNumber}>{products.length}</Text>
+            <Text style={styles.statLabel}>Prekių tipų</Text>
+          </View>
+          <View style={styles.statBox}>
+            <Text style={styles.statNumber}>{getTotalItems()}</Text>
+            <Text style={styles.statLabel}>Vnt. iš viso</Text>
+          </View>
+        </View>
+      </View>
+
       <FlatList
         data={products}
         keyExtractor={(item) => item.id}
@@ -51,23 +81,47 @@ export default function ProductsScreen() {
         renderItem={({ item }) => (
           <View style={styles.card}>
             <View style={styles.cardHeader}>
-              <Text style={styles.name}>{item.name}</Text>
+              <View style={styles.cardHeaderLeft}>
+                <Text style={styles.name}>{item.name}</Text>
+                <Text style={styles.code}>Kodas: {item.code}</Text>
+              </View>
               <View style={styles.quantityBadge}>
+                <Text style={styles.quantityLabel}>Kiekis</Text>
                 <Text style={styles.quantityText}>{item.quantity}</Text>
               </View>
             </View>
-            <Text style={styles.code}>Kodas: {item.code}</Text>
-            <Text style={styles.description}>{item.description}</Text>
-            <Text style={styles.createdBy}>
-              Pridėjo: {item.createdBy?.name || "Nežinomas"}
-            </Text>
+
+            {item.description && (
+              <View style={styles.descriptionContainer}>
+                <Text style={styles.descriptionLabel}>Aprašymas:</Text>
+                <Text style={styles.description}>{item.description}</Text>
+              </View>
+            )}
+
+            <View style={styles.cardFooter}>
+              <View style={styles.footerItem}>
+                <Text style={styles.footerLabel}>Pridėjo:</Text>
+                <Text style={styles.footerValue}>
+                  {item.createdBy?.name || "Nežinomas"}
+                </Text>
+              </View>
+              <View style={styles.footerItem}>
+                <Text style={styles.footerLabel}>Data:</Text>
+                <Text style={styles.footerValue}>
+                  {formatDate(item.createdAt)}
+                </Text>
+              </View>
+            </View>
           </View>
         )}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
+            <View style={styles.emptyIcon}>
+              <Text style={styles.emptyIconText}>📦</Text>
+            </View>
             <Text style={styles.emptyText}>Sandėlyje nėra prekių</Text>
             <Text style={styles.emptySubtext}>
-              Naudokite "Add" ekraną, kad pridėtumėte naujų prekių
+              Naudokite "Pridėti" ekraną, kad pridėtumėte naujų prekių nuskanavę jų kodus
             </Text>
           </View>
         }
@@ -79,78 +133,165 @@ export default function ProductsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
     backgroundColor: "#f5f5f5",
+  },
+  header: {
+    padding: 20,
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#e0e0e0",
   },
   title: {
     fontSize: 28,
     fontWeight: "bold",
-    marginBottom: 20,
     color: "#218838",
+    marginBottom: 16,
+  },
+  statsContainer: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+  },
+  statBox: {
+    alignItems: "center",
+    backgroundColor: "#f0f9f4",
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    flex: 1,
+    marginHorizontal: 6,
+  },
+  statNumber: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "#218838",
+  },
+  statLabel: {
+    fontSize: 12,
+    color: "#666",
+    marginTop: 4,
   },
   card: {
     backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    elevation: 3,
+    borderRadius: 16,
+    padding: 20,
+    marginHorizontal: 16,
+    marginTop: 12,
+    elevation: 4,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
   },
   cardHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 8,
+    alignItems: "flex-start",
+    marginBottom: 12,
+  },
+  cardHeaderLeft: {
+    flex: 1,
+    marginRight: 12,
   },
   name: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "bold",
     color: "#333",
-    flex: 1,
+    marginBottom: 6,
+  },
+  code: {
+    fontSize: 13,
+    color: "#666",
+    backgroundColor: "#f5f5f5",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    alignSelf: "flex-start",
   },
   quantityBadge: {
     backgroundColor: "#218838",
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    alignItems: "center",
+    minWidth: 70,
+  },
+  quantityLabel: {
+    color: "#fff",
+    fontSize: 10,
+    marginBottom: 2,
+    opacity: 0.9,
   },
   quantityText: {
     color: "#fff",
     fontWeight: "bold",
-    fontSize: 14,
+    fontSize: 22,
   },
-  code: {
-    fontSize: 14,
+  descriptionContainer: {
+    backgroundColor: "#f9f9f9",
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 12,
+  },
+  descriptionLabel: {
+    fontSize: 12,
     color: "#666",
+    fontWeight: "600",
     marginBottom: 4,
   },
   description: {
     fontSize: 14,
-    color: "#888",
-    marginBottom: 8,
+    color: "#555",
+    lineHeight: 20,
   },
-  createdBy: {
-    fontSize: 12,
+  cardFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: "#f0f0f0",
+  },
+  footerItem: {
+    flex: 1,
+  },
+  footerLabel: {
+    fontSize: 11,
+    color: "#999",
+    marginBottom: 2,
+  },
+  footerValue: {
+    fontSize: 13,
     color: "#218838",
     fontWeight: "600",
   },
   emptyContainer: {
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 60,
+    marginTop: 80,
+    paddingHorizontal: 40,
+  },
+  emptyIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: "#f0f9f4",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  emptyIconText: {
+    fontSize: 40,
   },
   emptyText: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "bold",
     color: "#666",
     marginBottom: 8,
+    textAlign: "center",
   },
   emptySubtext: {
     fontSize: 14,
     color: "#999",
     textAlign: "center",
+    lineHeight: 20,
   },
 });

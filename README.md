@@ -1,6 +1,6 @@
 # Sandėlio Prekių Valdymo Sistema
 
-React Native mobilė aplikacija sandėlio prekių valdymui su QR/brūkšninio kodo skenavimu, Firebase autentifikacija ir realtime duomenų baze.
+React Native mobilė aplikacija sandėlio prekių valdymui su QR/brūkšninio kodo skenavimu, Firebase autentifikacija ir realtime duomenų baze. 
 
 ## Technologijos
 

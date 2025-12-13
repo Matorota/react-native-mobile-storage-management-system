@@ -14,6 +14,7 @@ import { onSnapshot, collection, addDoc, Timestamp } from "firebase/firestore";
 import { db } from "../services/firebase";
 import { DEPARTED_COLLECTION } from "../constants/firestore";
 import { useAuth } from "../context/AuthContext";
+import AnimatedCard from "../components/AnimatedCard";
 
 interface Departed {
   id: string;
@@ -227,47 +228,49 @@ export default function DepartedScreen() {
       <FlatList
         data={getFilteredData()}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => {
+        renderItem={({ item, index }) => {
           const delivered = isDelivered(item.id);
           return (
-            <TouchableOpacity
-              style={styles.card}
-              onPress={() => handleItemPress(item)}
-              activeOpacity={0.7}
-            >
-              <View style={styles.cardHeader}>
-                <View style={styles.cardHeaderLeft}>
-                  <Text style={styles.name}>{item.name}</Text>
-                  <Text style={styles.code}>Produktas: {item.code}</Text>
+            <AnimatedCard delay={index * 50}>
+              <TouchableOpacity
+                style={styles.card}
+                onPress={() => handleItemPress(item)}
+                activeOpacity={0.7}
+              >
+                <View style={styles.cardHeader}>
+                  <View style={styles.cardHeaderLeft}>
+                    <Text style={styles.name}>{item.name}</Text>
+                    <Text style={styles.code}>Produktas: {item.code}</Text>
+                  </View>
+                  <View
+                    style={[
+                      styles.quantityBadge,
+                      delivered && styles.quantityBadgeDelivered,
+                    ]}
+                  >
+                    <Text style={styles.quantityLabel}>
+                      {delivered ? "Pristatyta" : "Kiekis"}
+                    </Text>
+                    <Text style={styles.quantityText}>{item.quantity}</Text>
+                  </View>
                 </View>
-                <View
-                  style={[
-                    styles.quantityBadge,
-                    delivered && styles.quantityBadgeDelivered,
-                  ]}
-                >
-                  <Text style={styles.quantityLabel}>
-                    {delivered ? "Pristatyta" : "Kiekis"}
-                  </Text>
-                  <Text style={styles.quantityText}>{item.quantity}</Text>
-                </View>
-              </View>
 
-              <View style={styles.cardFooter}>
-                <View style={styles.footerItem}>
-                  <Text style={styles.footerLabel}>Išdavė:</Text>
-                  <Text style={styles.footerValue}>
-                    {item.departedBy?.name}
-                  </Text>
+                <View style={styles.cardFooter}>
+                  <View style={styles.footerItem}>
+                    <Text style={styles.footerLabel}>Išdavė:</Text>
+                    <Text style={styles.footerValue}>
+                      {item.departedBy?.name}
+                    </Text>
+                  </View>
+                  <View style={styles.footerItem}>
+                    <Text style={styles.footerLabel}>Data:</Text>
+                    <Text style={styles.footerValue}>
+                      {formatDate(item.departedAt)}
+                    </Text>
+                  </View>
                 </View>
-                <View style={styles.footerItem}>
-                  <Text style={styles.footerLabel}>Data:</Text>
-                  <Text style={styles.footerValue}>
-                    {formatDate(item.departedAt)}
-                  </Text>
-                </View>
-              </View>
-            </TouchableOpacity>
+              </TouchableOpacity>
+            </AnimatedCard>
           );
         }}
         ListEmptyComponent={

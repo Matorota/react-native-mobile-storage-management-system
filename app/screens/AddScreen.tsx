@@ -20,6 +20,7 @@ import {
 import { db } from "../services/firebase";
 import { PRODUCTS_COLLECTION } from "../constants/firestore";
 import { useAuth } from "../context/AuthContext";
+import PulseButton from "../components/PulseButton";
 
 export default function AddScreen() {
   const { user } = useAuth();
@@ -156,9 +157,13 @@ export default function AddScreen() {
             Nuskenuokite prekės QR arba brūkšninį kodą {"\n"}
             Jei prekė jau yra sandėlyje, jos kiekis bus padidintas
           </Text>
-          <TouchableOpacity style={styles.scanButton} onPress={startScanning}>
+          <PulseButton
+            onPress={startScanning}
+            style={styles.scanButton}
+            pulseEffect={true}
+          >
             <Text style={styles.scanButtonText}>Aktyvuoti kamerą</Text>
-          </TouchableOpacity>
+          </PulseButton>
           <View style={styles.infoBox}>
             <Text style={styles.infoTitle}>Palaikomi kodai:</Text>
             <Text style={styles.infoText}>

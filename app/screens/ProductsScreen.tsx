@@ -5,6 +5,7 @@ import { onSnapshot, collection } from "firebase/firestore";
 import { db } from "../services/firebase";
 import { PRODUCTS_COLLECTION } from "../constants/firestore";
 import { useAuth } from "../context/AuthContext";
+import AnimatedCard from "../components/AnimatedCard";
 
 interface Product {
   id: string;
@@ -89,8 +90,8 @@ export default function ProductsScreen() {
             colors={["#218838"]}
           />
         }
-        renderItem={({ item }) => (
-          <View style={styles.card}>
+        renderItem={({ item, index }) => (
+          <AnimatedCard delay={index * 50} style={styles.card}>
             <View style={styles.cardHeader}>
               <View style={styles.cardHeaderLeft}>
                 <Text style={styles.name}>{item.name}</Text>
@@ -123,7 +124,7 @@ export default function ProductsScreen() {
                 </Text>
               </View>
             </View>
-          </View>
+          </AnimatedCard>
         )}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>

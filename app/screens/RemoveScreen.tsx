@@ -25,6 +25,7 @@ import {
   PRODUCTS_COLLECTION,
   DEPARTED_COLLECTION,
 } from "../constants/firestore";
+import PulseButton from "../components/PulseButton";
 
 interface FoundProduct {
   id: string;
@@ -174,9 +175,13 @@ export default function RemoveScreen() {
             Nuskenuokite prekės kodą, kurią norite išduoti {"\n"}
             Prekės kiekis bus sumažintas arba ji bus perkelta į "Išvykę"
           </Text>
-          <TouchableOpacity style={styles.scanButton} onPress={startScanning}>
+          <PulseButton
+            onPress={startScanning}
+            style={styles.scanButton}
+            pulseEffect={true}
+          >
             <Text style={styles.scanButtonText}>Aktyvuoti kamerą</Text>
-          </TouchableOpacity>
+          </PulseButton>
           <View style={styles.infoBox}>
             <Text style={styles.infoTitle}>Palaikomi kodai:</Text>
             <Text style={styles.infoText}>
